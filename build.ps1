@@ -23,13 +23,18 @@ $DistName = "$($Config.APP_NAME)-$($Config.APP_VERSION)"
 $IconData = "$(Resolve-Path "assets");assets"
 $VenvPython = Join-Path ".venv" "Scripts\python.exe"
 
-if (-not (Test-Path $VenvPython)) {
-    python -m venv .venv
-}
+if (Get-Command "uv" -ErrorAction SilentlyContinue) {
+    uv sync --extra build
+    uv run pyinstaller --noconfirm --clean --onefile --windowed --name $DistName --specpath build --add-data $IconData main.py
+} else {
+    if (-not (Test-Path $VenvPython)) {
+        python -m venv .venv
+    }
 
-& $VenvPython -m pip install --upgrade pip
-& $VenvPython -m pip install -r requirements-build.txt
-& $VenvPython -m PyInstaller --noconfirm --clean --onefile --windowed --name $DistName --specpath build --add-data $IconData main.py
+    & $VenvPython -m pip install --upgrade pip
+    & $VenvPython -m pip install -r requirements-build.txt
+    & $VenvPython -m PyInstaller --noconfirm --clean --onefile --windowed --name $DistName --specpath build --add-data $IconData main.py
+}
 
 if (Test-Path "build") {
     Remove-Item -Recurse -Force build

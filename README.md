@@ -1,8 +1,22 @@
 # Viewer
 
+## Description
+
 A small, portable Windows image viewer built with Python and PySide6.
 
-## Run
+Choose a folder with the folder button, paste a path into the header, or select a
+saved favorite. Hold **Shift** and use the mouse wheel over a gallery to resize
+the grid tiles.
+
+## Installation
+
+Install dependencies and run the application with `uv`:
+
+```powershell
+uv run python main.py
+```
+
+Alternatively, use Python's built-in virtual environment support:
 
 ```powershell
 python -m venv .venv
@@ -11,20 +25,18 @@ python -m venv .venv
 .\.venv\Scripts\python main.py
 ```
 
-Choose a folder with the folder button, paste a path into the header, or select a
-saved favorite. Hold **Shift** and use the mouse wheel over a gallery to resize
-the grid tiles.
+## Distribution
 
-## Build a portable executable
+Build a portable Windows executable:
 
 ```powershell
 .\build.ps1
 ```
 
-The build script creates `.venv` automatically, installs the runtime and build
-dependencies into it, and writes a single-file Windows executable into `dist`.
-The generated `.exe` is meant to run on another Windows PC without installing
-Python or the packages from `requirements.txt`.
+The build script uses `uv` when it is available. If `uv` is not installed, it
+falls back to creating `.venv` with Python. It installs the runtime and build
+dependencies into the isolated environment and writes a single-file Windows
+executable into `dist`.
 
 To change the generated file name, edit `build.env` before building:
 
