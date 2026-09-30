@@ -53,6 +53,7 @@ class ViewerFrame(QFrame):
         self.show_likes_navigator = True
         self.show_only_liked = False
         self.sort_by_likes = False
+        self.showDeepLoop = False
         self.likes: set[str] = set()
         self.tiles: list[ImageBox] = []
         self.setStyleSheet(f"background: {COLORS['frame']};")
@@ -66,6 +67,7 @@ class ViewerFrame(QFrame):
         self.header.folder_requested.connect(self.choose_directory)
         self.header.layout_requested.connect(self.show_layout)
         self.header.options_requested.connect(self.show_options)
+        self.header.deep_loop_changed.connect(self.toggle_deep_loop)
         self.header.path_submitted.connect(self.set_directory)
         root.addWidget(self.header)
 
@@ -108,10 +110,7 @@ class ViewerFrame(QFrame):
             if item.widget():
                 item.widget().deleteLater()
         try:
-            files = sorted(
-                (p for p in self.directory.iterdir() if p.is_file() and p.suffix.lower().lstrip(".") in IMAGE_EXTENSIONS),
-                key=lambda p: p.name.lower(),
-            )
+            files = sorted(self._image_files(), key=lambda p: str(p.relative_to(self.directory)).lower())
         except OSError:
             files = []
         self.likes.intersection_update(p.name for p in files)
@@ -235,6 +234,33 @@ class ViewerFrame(QFrame):
     def toggle_sort_by_likes(self) -> None:
         self.sort_by_likes = not self.sort_by_likes
         self.reload(preserve_scroll=True)
+
+    def toggle_deep_loop(self, checked: bool) -> None:
+        self.showDeepLoop = checked
+        self.reload(preserve_scroll=True)
+
+    def _image_files(self) -> list[Path]:
+        if not self.showDeepLoop:
+            return [p for p in self.directory.iterdir() if self._is_image_file(p)]
+
+        files: list[Path] = []
+        pending: list[tuple[Path, int]] = [(self.directory, 0)]
+        while pending:
+            directory, depth = pending.pop(0)
+            try:
+                children = list(directory.iterdir())
+            except OSError:
+                continue
+            for path in children:
+                if self._is_image_file(path):
+                    files.append(path)
+                elif path.is_dir() and depth < 2:
+                    pending.append((path, depth + 1))
+        return files
+
+    @staticmethod
+    def _is_image_file(path: Path) -> bool:
+        return path.is_file() and path.suffix.lower().lstrip(".") in IMAGE_EXTENSIONS
 
     def scroll_to_image(self, index: int) -> None:
         if 0 <= index < len(self.tiles):

@@ -7,7 +7,7 @@ from pathlib import Path
 
 from PySide6.QtCore import QPoint, QRect, QSize, Qt, Signal
 from PySide6.QtGui import QColor, QMouseEvent, QPainter, QPixmap
-from PySide6.QtWidgets import QApplication, QFrame, QLabel, QLayout, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QFrame, QLabel, QLayout, QVBoxLayout, QWidget
 
 from src.config import COLORS
 from src.icons import icon
@@ -134,19 +134,32 @@ class ImageBox(QFrame):
         super().mouseDoubleClickEvent(event)
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
-        if event.button() == Qt.MouseButton.RightButton: # and QApplication.keyboardModifiers() & Qt.KeyboardModifier.ShiftModifier:
-            self._open_native()
+        if event.button() == Qt.MouseButton.RightButton:
+            if event.modifiers() & Qt.KeyboardModifier.ControlModifier:
+                self._reveal_native()
+            else:
+                self._open_native()
             event.accept()
             return
         super().mousePressEvent(event)
 
     def _open_native(self) -> None:
+        path = self.path.resolve()
         if sys.platform == "win32":
-            os.startfile(self.path)  # type: ignore[attr-defined]
+            os.startfile(path)  # type: ignore[attr-defined]
         elif sys.platform == "darwin":
-            subprocess.Popen(["open", str(self.path)])
+            subprocess.Popen(["open", str(path)])
         else:
-            subprocess.Popen(["xdg-open", str(self.path)])
+            subprocess.Popen(["xdg-open", str(path)])
+
+    def _reveal_native(self) -> None:
+        path = self.path.resolve()
+        if sys.platform == "win32":
+            subprocess.Popen(f'explorer.exe /select,"{path}"')
+        elif sys.platform == "darwin":
+            subprocess.Popen(["open", "-R", str(path)])
+        else:
+            subprocess.Popen(["xdg-open", str(path.parent)])
 
     def refresh(self, size: int, expanded: bool) -> None:
         self.tile_size, self.expanded = size, expanded

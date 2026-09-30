@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from PySide6.QtCore import QSize, Qt, Signal
-from PySide6.QtWidgets import QHBoxLayout, QLineEdit, QPushButton, QWidget
+from PySide6.QtWidgets import QCheckBox, QHBoxLayout, QLineEdit, QPushButton, QWidget
 
 from src.config import COLORS
 from src.icons import icon
@@ -14,6 +14,7 @@ class FrameHeader(QWidget):
     folder_requested = Signal()
     layout_requested = Signal()
     options_requested = Signal()
+    deep_loop_changed = Signal(bool)
     path_submitted = Signal(str)
 
     def __init__(self, directory: Path):
@@ -25,6 +26,11 @@ class FrameHeader(QWidget):
 
         self.favorites_button = self._tool("star", self.favorites_requested.emit)
         self.folder_button = self._tool("folder", self.folder_requested.emit)
+        self.showDeepLoop = QCheckBox("deep loop")
+        self.showDeepLoop.setFixedHeight(17)
+        self.showDeepLoop.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.showDeepLoop.setStyleSheet(self.control_css() + " padding: 0 4px;")
+        self.showDeepLoop.toggled.connect(self.deep_loop_changed.emit)
         self.path = QLineEdit(str(directory))
         self.path.setFixedHeight(17)
         self.path.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -33,7 +39,7 @@ class FrameHeader(QWidget):
         self.layout_button = self._tool("grid", self.layout_requested.emit)
         self.options_button = self._tool("ellipsis", self.options_requested.emit)
 
-        for widget in (self.favorites_button, self.folder_button, self.path, self.layout_button, self.options_button):
+        for widget in (self.favorites_button, self.folder_button, self.showDeepLoop, self.path, self.layout_button, self.options_button):
             bar.addWidget(widget)
 
     @staticmethod
